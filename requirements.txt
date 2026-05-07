@@ -1,0 +1,17 @@
+# GeoPHiT runtime dependencies.
+#
+# Lower bounds match the environment reported in §4.4 of the paper
+# (PyTorch 1.13). The codebase has been smoke-tested on the upper bound shown
+# in parentheses.
+#
+# Install:    pip install -r requirements.txt
+# CUDA build: pick a torch wheel from https://pytorch.org/get-started/locally/
+
+torch>=1.13,<3            # tested with 2.11.0
+numpy>=1.23,<3            # tested with 2.4.3
+scipy>=1.10,<2            # tested with 1.17.1
+pandas>=1.5,<4            # tested with 3.0.1
+pyyaml>=6.0,<7            # tested with 6.0.3
+tqdm>=4.64,<5             # tested with 4.67.3
+scikit-learn>=1.2,<2      # tested with 1.8.0
+matplotlib>=3.6,<4        # tested with 3.10.8

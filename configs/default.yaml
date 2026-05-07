@@ -1,0 +1,56 @@
+# Defaults matching the explicit declarations in §4.4 ("Implementation Details")
+# of the Information Fusion submission.
+
+seed: 42
+device: cuda
+
+data:
+  # Synthetic stand-in sized to match the Volve dataset reported in Table 1
+  # (15 wells, ~405,000 total samples, 0.1 m sampling).
+  source: synthetic
+  num_wells: 15
+  samples_per_well: 27000
+  channels: [GR, RT, NPHI, DPHI, DEN]
+  physics_channels: [RT, NPHI, DPHI, GR]
+  history_len: 400        # sequence length 500 (50 m) = history + predict
+  predict_len: 100        # prediction horizon = 100 steps (10 m)
+  stride: 100
+  noise_std: 0.02
+  train_val_test_split: [0.7, 0.15, 0.15]
+
+model:
+  d_in: 5                 # GR, RT, NPHI, DPHI, DEN
+  d_physics: 4            # RT, NPHI, DPHI, GR (codebook construction)
+  n_z: 64                 # latent dim
+  codebook_size: 1024     # K
+  encoder_channels: [64, 128, 256, 64]   # 4 res blocks, last == n_z
+  downsample_factor: 4    # two stride-2 convs in encoder
+  geo_window_sand: 25     # ~2.5 m at 0.1 m sampling (sandstone)
+  geo_window_shale: 7     # ~0.7 m at 0.1 m sampling (shale)
+  geo_probe_window: 50
+  d_model: 256
+  num_heads: 8
+  num_layers: 4           # Context Encoder layers (BaseDec / SCDec also use 4)
+  dropout: 0.1
+
+loss:
+  alpha_physics: 0.1      # physics weight α
+  beta_commit: 0.25       # commitment penalty β
+  lambda_gan: 0.25        # GAN weight λ
+  archie_a: 1.0           # Archie's formation factor (clean sandstone)
+  archie_m: 2.0           # Archie's cementation exponent
+  gardner_rho0: 2.65      # matrix (quartz) density, g/cm^3
+  gan_warmup_ratio: 0.75  # adversarial loss introduced at 0.75 K
+  cvr_threshold: 0.2      # CVR violation threshold ε
+
+train:
+  batch_size: 32
+  lr_stage1: 1.0e-4       # Adam lr
+  lr_stage2: 1.0e-4
+  betas: [0.9, 0.999]
+  epochs_stage1: 200      # 200 epochs with early stopping
+  epochs_stage2: 200
+  early_stop_patience: 10
+  num_workers: 0
+  log_interval: 50
+  ckpt_dir: ./checkpoints
