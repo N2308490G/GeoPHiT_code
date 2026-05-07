@@ -63,36 +63,22 @@ an RTX 4090.
 
 ## Method at a glance
 
-```text
-┌──────────────────────  Stage 1  ──────────────────────┐
-│                                                       │
-│  X_pred ──► Encoder_t ──► VQ_t ──► Decoder_t ──► X̂_pred   (target stream)
-│              │                                        │
-│              └► AvgPool(w_geo) ──► Encoder_d ──► VQ_d │
-│                                       │       │      │
-│                                       └─► Decoder_d ──► X̂_down  (trend stream)
-│                                                       │
-│  L_stream = L_rec + L_commit + λ·L_GAN + α·L_physics  │
-└───────────────────────────────────────────────────────┘
-                             │
-                             ▼
-┌──────────────────────  Stage 2  ──────────────────────┐
-│                                                       │
-│  X_p ──► ContextEncoder ──► H_p                       │
-│                              │                        │
-│                              └──► BaseDec ──► ŝ_down  │  (trend tokens)
-│                                                │      │
-│                                                └─► SelfCondDec(ŝ_down, H_p) ──► ŝ_pred
-│                                                       │
-│  X̂_pred = Decoder_t(Detokenize(ŝ_pred, Z_t))         │
-└───────────────────────────────────────────────────────┘
-```
+![GeoPHiT framework: dual-stream physics-aware VQGAN (Stage 1) feeding a
+hierarchical discrete-token Transformer (Stage 2).](assets/figure_1.png)
 
-* Stage 1 trains a dual-stream VQGAN with **physics-aware** parameter-wise
-  quantization (Eq. 4) and a soft Archie + Gardner loss (Eq. 7).
-* Stage 2 freezes the codebooks and trains a hierarchical token Transformer
-  to model the joint distribution of trend + target tokens (Eqs. 9–10).
-* Inference: greedy autoregressive token generation (Algorithm 2).
+* **Stage 1** trains a dual-stream VQGAN with **physics-aware** parameter-wise
+  quantization (Eq. 4) and a soft Archie + Gardner loss (Eq. 7). The target
+  stream encodes high-resolution `X_pred`; the trend stream encodes its
+  geology-adaptive moving average `X_down` (Eq. 1). Each stream owns a
+  separate codebook (`Z_t`, `Z_d`).
+* **Stage 2** freezes the codebooks and trains a hierarchical token
+  Transformer: a *Context Encoder* maps the historical window `X_p` to
+  contextual embeddings `H_p`; a *Base Decoder* autoregressively generates
+  trend tokens `s_down` from `H_p`; a *Self-Conditioned Decoder* generates
+  fine-grained target tokens `s_pred` conditioned jointly on `s_down` and
+  `H_p` (Eqs. 9–10).
+* **Inference** uses greedy autoregressive token generation followed by
+  detokenisation through the target-stream decoder (Algorithm 2).
 
 ## Repository layout
 
@@ -118,6 +104,7 @@ GeoPHiT_code/
 │       └── seed.py
 ├── scripts/                        # train_stage1, train_stage2, evaluate, infer
 ├── tests/test_smoke.py             # end-to-end smoke test (CPU, < 10 s)
+├── assets/figure_1.png             # framework diagram referenced from README
 ├── requirements.txt                # minimum versions
 ├── requirements-lock.txt           # exact versions used to validate the smoke test
 ├── LICENSE                         # MIT
